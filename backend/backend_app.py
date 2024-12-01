@@ -46,6 +46,28 @@ def delete_post(id):
     return jsonify({"error:": "Post not found"}), 404
 
 
+@app.route("/api/posts/<int:id>", methods=["PUT"])
+def update_post(id):
+    
+    data = request.get_json()
+    
+    if not data:
+        return jsonify({"error": "Invalid input. JSON data is required."}), 400
+
+    for post in POSTS:
+        if post["id"] == id:
+            # Update only the provided fields
+            post["title"] = data.get("title", post["title"])
+            post["content"] = data.get("content", post["content"])
+            
+            return jsonify({
+                "id": post["id"],
+                "title": post["title"],
+                "content": post["content"]
+                }), 200
+            
+    return jsonify({"error": "Post not found"}), 404
+
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5002, debug=True)
