@@ -1,20 +1,36 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-import uuid
+import ulid
 
 app = Flask(__name__)
 CORS(app)  # This will enable CORS for all routes
 
 POSTS = [
-    {"id": 1, "title": "First post", "content": "This is the first post."},
-    {"id": 2, "title": "Second post", "content": "This is the second post."},
+    {"id": "01F8M7N8BG6HESKAV8RB7H1XYT", "title": "First post", "content": "This is the first post."},
+    {"id": "01F8M7N8BG6HESKAV8RB7H1XYU", "title": "Second post", "content": "This is the second post."},
 ]
 
 
 @app.route('/api/posts', methods=['GET'])
 def get_posts():
-    return jsonify(POSTS)
+    return jsonify(sorted_posts())
 
+def sorted_posts():
+    sort = request.args.get("sort", default = None)
+    direction = request.args.get("direction", default = "asc")
+    
+    if sort and sort not in ["title", "content"]:
+        return jsonify({"error": "Invalid sort field. Allowed values are 'title' or 'content'."}), 400
+    
+    if direction not in ["asc", "desc"]:
+        return jsonify({"error": "Invalid direction. Allowed values are 'asc' or 'desc'."}), 400
+
+    if sort:
+        reverse_order = direction == "desc"
+        return sorted(POSTS, key=lambda post: post.get(sort, '').lower(), reverse=reverse_order)
+    
+    return POSTS
+    
 
 @app.route('/api/posts', methods=["POST"])
 def create_posts():
@@ -23,7 +39,7 @@ def create_posts():
     if "title" not in data and "content" not in data:
         return jsonify({"error": "Both 'title' and 'content' are required"}), 400
     
-    new_id = uuid.uuid4().int
+    new_id = str(ulid.ulid())
     
     new_post = {
         "id": new_id,
